@@ -12,7 +12,7 @@ obj = bpy.context.object
 if obj is None or obj.type != 'ARMATURE':
     raise RuntimeError("Select the Armature object first.")
 
-# Must select bones in Pose Mode
+# Bones must be selected in Pose Mode
 sel_pose_bones = list(bpy.context.selected_pose_bones)
 if not sel_pose_bones:
     raise RuntimeError("No pose bones selected. Select bones in Pose Mode first.")
@@ -21,9 +21,13 @@ orig_mode = bpy.context.mode
 not_parented = []
 
 try:
+    # --- Edit Mode required for parenting & deletion ---
     bpy.ops.object.mode_set(mode='EDIT')
     edit_bones = obj.data.edit_bones
 
+    # -------------------------
+    # Reparent selected bones
+    # -------------------------
     for pb in sel_pose_bones:
         name = pb.name
         src_eb = edit_bones.get(name)
@@ -32,7 +36,7 @@ try:
             not_parented.append(name)
             continue
 
-        # --- 1) Try DEF- counterpart ---
+        # 1) DEF- counterpart
         def_name = DEF_PREFIX + name
         def_eb = edit_bones.get(def_name)
 
@@ -42,7 +46,7 @@ try:
             print(f"[DEF] Parented {name} → {def_name}")
             continue
 
-        # --- 2) Try __DUPLICATE__ fallback ---
+        # 2) __DUPLICATE__ fallback
         dup_name = DUPLICATE_PREFIX + name
         dup_eb = edit_bones.get(dup_name)
 
@@ -55,17 +59,31 @@ try:
             )
             continue
 
-        # --- 3) No valid target ---
         not_parented.append(name)
 
+    # -------------------------
+    # Delete all __DUPLICATE__ bones
+    # -------------------------
+    duplicate_bones = [
+        eb for eb in edit_bones
+        if eb.name.startswith(DUPLICATE_PREFIX)
+    ]
+
+    for eb in duplicate_bones:
+        edit_bones.remove(eb)
+
+    print(f"\nDeleted {len(duplicate_bones)} '__DUPLICATE__' bones.")
+
 finally:
-    # Restore previous mode safely
+    # Restore original mode safely
     try:
         bpy.ops.object.mode_set(mode=orig_mode)
     except Exception:
         bpy.ops.object.mode_set(mode='OBJECT')
 
-# --- Summary ---
+# -------------------------
+# Summary
+# -------------------------
 print("\n==============================")
 if not_parented:
     print("Bones NOT reparented:")
