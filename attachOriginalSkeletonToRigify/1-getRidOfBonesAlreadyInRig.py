@@ -1,3 +1,9 @@
+#Put the original armature in the file then rescale and rotate. apply.
+#Make a Layer in it with all the bones for easy access
+#Remove all parenting with alt in edit mode
+#Merge Armatures
+#Select all bones in original layer
+
 import bpy
 
 DUPLICATE_PREFIX = "__DUPLICATE__"
@@ -63,5 +69,6 @@ def mark_duplicate_bones_in_rig():
     for name in renamed:
         print(name)
     print("==============================")
+
 
 mark_duplicate_bones_in_rig()
