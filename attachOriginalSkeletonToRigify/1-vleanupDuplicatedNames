@@ -1,0 +1,79 @@
+#Put the original armature in the file then rescale and rotate. apply.
+#Make a Layer in it with all the bones for easy access
+#Remove all parenting with alt in edit mode
+#Merge Armatures
+#Select all bones in original layer
+
+
+import bpy
+import re
+
+obj = bpy.context.object
+if obj is None or obj.type != 'ARMATURE':
+    raise RuntimeError("Select the Armature object first.")
+
+# Get selected bones in pose mode
+sel_pose_bones = bpy.context.selected_pose_bones
+if not sel_pose_bones:
+    raise RuntimeError("Select bones in Pose Mode first.")
+
+# Work in edit mode
+orig_mode = bpy.context.mode
+bpy.ops.object.mode_set(mode='EDIT')
+edit_bones = obj.data.edit_bones
+
+def split_suffix(name):
+    """
+    If name ends with .### return (base, number)
+    Else return (name, None)
+    """
+    m = re.match(r"^(.*)\.(\d+)$", name)
+    if m:
+        return m.group(1), int(m.group(2))
+    return name, None
+
+def list_numbered_variants(base):
+    """
+    Return all bones named base, base.001, base.002, ...
+    Sorted by number
+    """
+    variants = []
+    for eb in edit_bones:
+        b, num = split_suffix(eb.name)
+        if b == base:
+            variants.append((eb, num))
+    # Sort: base first (num=None), then by numeric suffix
+    variants.sort(key=lambda x: (9999 if x[1] is None else x[1]))
+    return variants
+
+for pb in sel_pose_bones:
+    eb = edit_bones[pb.name]
+
+    base, suffix = split_suffix(eb.name)
+    if suffix is None:
+        # This bone has no .### suffix → skip
+        continue
+
+    # Get all existing variants of this base name
+    variants = list_numbered_variants(base)
+
+    # If base name exists (one of the variants has num=None), we must push them forward
+    base_exists = any(num is None for _, num in variants)
+
+    if base_exists:
+        # We reorder them: base → .001, .001 → .002, etc.
+        for eb2, num in reversed(variants):
+            if num is None:
+                new_name = f"{base}.001"
+            else:
+                new_name = f"{base}.{num+1:03d}"
+            eb2.name = new_name
+
+    # After pushing, the base name is now free — rename selected bone to base
+    eb.name = base
+    print(f"Renamed {pb.name} → {base}")
+
+# Return to previous mode
+bpy.ops.object.mode_set(mode=orig_mode)
+
+print("\nDone cleaning duplicate bone names.")
