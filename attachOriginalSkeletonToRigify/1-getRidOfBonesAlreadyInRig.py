@@ -6,12 +6,11 @@
 
 import bpy
 
-DUPLICATE_PREFIX = "__DUPLICATE__"
+DUPLICATE_SUFFIX = "_CTRL"
 
 def mark_duplicate_bones_in_rig():
     # Expect exactly two armatures selected
     armatures = [obj for obj in bpy.context.selected_objects if obj.type == 'ARMATURE']
-
     if len(armatures) != 2:
         print("Select exactly TWO armatures in Object Mode.")
         return
@@ -34,7 +33,6 @@ def mark_duplicate_bones_in_rig():
 
     # Find duplicated bone names
     duplicated_names = rig_names.intersection(other_names)
-
     if not duplicated_names:
         print("No duplicated bones found. Nothing to mark.")
         return
@@ -53,13 +51,12 @@ def mark_duplicate_bones_in_rig():
     bpy.ops.object.mode_set(mode='EDIT')
 
     renamed = []
-
     for eb in rig.data.edit_bones:
         if eb.name in duplicated_names:
             # Avoid double-marking if script is run twice
-            if not eb.name.startswith(DUPLICATE_PREFIX):
+            if not eb.name.endswith(DUPLICATE_SUFFIX):
                 original_name = eb.name
-                eb.name = DUPLICATE_PREFIX + original_name
+                eb.name = original_name + DUPLICATE_SUFFIX
                 renamed.append(eb.name)
 
     bpy.ops.object.mode_set(mode='OBJECT')
@@ -70,5 +67,6 @@ def mark_duplicate_bones_in_rig():
         print(name)
     print("==============================")
 
-
 mark_duplicate_bones_in_rig()
+
+
