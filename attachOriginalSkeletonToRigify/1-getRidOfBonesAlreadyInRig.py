@@ -1,8 +1,9 @@
 #Put the original armature in the file then rescale and rotate. apply.
 #Make a Layer in it with all the bones for easy access
 #Remove all parenting with alt in edit mode
+#Run script that will rename all conflicting bones in the rigify armature so that they don't have the same name with the source one adding the sufix _CTRL to them
 #Merge Armatures
-#Select all bones in original layer
+#Select all bones in the original layer
 
 import bpy
 
@@ -68,5 +69,6 @@ def mark_duplicate_bones_in_rig():
     print("==============================")
 
 mark_duplicate_bones_in_rig()
+
 
 
